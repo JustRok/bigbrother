@@ -40,7 +40,7 @@
             left: 0;
             transition: filter .5s ease;
             z-index: 1;
-            filter: blur(15px)
+            filter: blur(5px)
         }
 
         #iframe-container.loaded {
@@ -66,16 +66,16 @@
             top: 0;
             left: 0;
             z-index: 10;
-            background: rgba(10, 10, 10, .4);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(10, 10, 10, 0.3);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             transition: opacity .3s ease, visibility .3s
         }
 
         body.phantom-bg-active .message-container {
-            background: rgba(10, 10, 10, 0.6);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px)
+            background: rgba(10, 10, 10, 0.2);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px)
         }
 
         .message-content {
@@ -150,8 +150,8 @@
     </div>
     <div id="error" class="message-container" style="display:none">
         <div class="message-content">
-            <h1>Connection Error</h1>
-            <p id="error-message">An error occurred.</p>
+            <h1 id="error-title">Error</h1>
+            <div id="error-message" style="color: var(--text-muted); font-size: 13px;"></div>
             <button id="retry-btn">Retry</button>
         </div>
     </div>
@@ -161,10 +161,20 @@
         const WISP_SERVERS = window.SITE_CONFIG?.wispServers || [];
 
         const ERRORS = { noUrl: { title: "No URL Provided", message: "You need to provide a URL to load.", hint: `Format: ${location.pathname}#https://example.com` }, invalidUrl: { title: "Invalid URL", message: "The URL you provided is not valid.", hint: `Try: ${location.pathname}#https://google.com` }, connectionFailed: { title: "Connection Failed", message: "Could not connect to the website.", hint: "The site may be down or blocking requests." }, proxyError: { title: "Proxy Error", message: "Failed to initialize the proxy connection.", hint: "Try refreshing or check your proxy settings." }, timeout: { title: "Loading Timeout", message: "The page is taking too long to load.", hint: "Click 'Skip' to view what has loaded, or 'Retry' to try again." }, blocked: { title: "Access Denied", message: "This website is blocking access.", hint: "Some sites don't allow being loaded through proxies." }, unknown: { title: "Error", message: "An unexpected error occurred.", hint: "Please try again." } };
-        const els = { loading: document.getElementById('loading'), loadingTitle: document.getElementById('loading-title'), loadingUrl: document.getElementById('loading-url'), error: document.getElementById('error'), errorMessage: document.getElementById('error-message'), iframeContainer: document.getElementById('iframe-container'), skipBtn: document.getElementById('skip-btn'), retryBtn: document.getElementById('retry-btn') };
+        const els = { loading: document.getElementById('loading'), loadingTitle: document.getElementById('loading-title'), loadingUrl: document.getElementById('loading-url'), error: document.getElementById('error'), errorTitle: document.getElementById('error-title'), errorMessage: document.getElementById('error-message'), iframeContainer: document.getElementById('iframe-container'), skipBtn: document.getElementById('skip-btn'), retryBtn: document.getElementById('retry-btn') };
         const isValidUrl = (url) => { try { const u = new URL(url); return u.protocol === 'http:' || u.protocol === 'https:' } catch { return false } };
         const showContent = () => { els.loading.style.opacity = '0'; els.loading.style.visibility = 'hidden'; els.iframeContainer.classList.add('loaded') };
-        function showError(type, details = '') { els.loading.style.display = 'none'; els.error.style.display = 'flex'; const err = ERRORS[type] || ERRORS.unknown; els.errorMessage.innerHTML = `<strong>${err.title}</strong><br><br>${err.message}<br><br><small style="color:var(--text-muted)">${err.hint}</small>${details ? `<br><br><code style="font-size:11px;background:var(--surface);padding:4px 8px;border-radius:4px">${details}</code>` : ''}` }
+        function showError(type, details = '') { 
+            els.loading.style.display = 'none'; 
+            els.error.style.display = 'flex'; 
+            const err = ERRORS[type] || ERRORS.unknown; 
+            els.errorTitle.textContent = err.title;
+            els.errorMessage.innerHTML = `
+                <div style="margin-bottom: 8px">${err.message}</div>
+                <div style="font-size: 11px; opacity: 0.6">${err.hint}</div>
+                ${details ? `<code style="display: block; margin-top: 15px; font-size: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; word-break: break-all; opacity: 0.4; font-family: monospace;">${details}</code>` : ''}
+            `;
+        }
         function getErrorType(msg) { msg = (msg || '').toLowerCase(); if (msg.includes('fetch') || msg.includes('network')) return 'connectionFailed'; if (msg.includes('timeout')) return 'timeout'; if (msg.includes('blocked') || msg.includes('cors') || msg.includes('access')) return 'blocked'; if (msg.includes('websocket') || msg.includes('wisp')) return 'proxyError'; return 'unknown' }
 
         let scramjetInstance = null;

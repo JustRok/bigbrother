@@ -252,6 +252,20 @@
             text-transform: uppercase;
             letter-spacing: 0.1em;
             font-weight: 700;
+            cursor: grab;
+            user-select: none;
+            padding: 4px 0;
+        }
+
+        .widget-header:active {
+            cursor: grabbing;
+        }
+
+        .side-widget.dragging {
+            opacity: 0.8;
+            scale: 1.02;
+            z-index: 100;
+            cursor: grabbing;
         }
 
         .widget-header i {
@@ -361,18 +375,23 @@
     </style>
     <script>
         (function() {
-            if (sessionStorage.getItem('phantom_unblock_all') === 'true') {
+            var isUnblocked = localStorage.getItem('phantom_unblock_all') === 'true' || new URLSearchParams(location.search).has('unblock');
+            
+            if (isUnblocked) {
+                localStorage.setItem('phantom_unblock_all', 'true');
+                
                 window.addEventListener('beforeunload', (e) => {
                     e.preventDefault();
                     e.returnValue = '';
                 });
-                
-                // Define minimal loading functions for top-level mode
+
+                // Minimal loading functions for top-level mode
                 window.showLoading = window.showLoading || (() => {});
                 window.hideLoading = window.hideLoading || (() => {});
             }
         })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
     <script src="config.js" defer></script>
     <script src="scripts/settings.js" defer></script>
     <script src="scripts/background.js" defer></script>
@@ -401,12 +420,12 @@
 
         <main class="main-content">
             <!-- Floating Side Widgets -->
-            <div class="side-widget left-widget">
+            <div id="weather-widget-container" class="side-widget left-widget">
                 <div class="widget-header"><i class="fa-solid fa-cloud-sun"></i><span>Weather</span></div>
                 <div id="weather-widget"></div>
             </div>
 
-            <div class="side-widget right-widget">
+            <div id="news-widget-container" class="side-widget right-widget">
                 <div class="widget-header"><i class="fa-solid fa-newspaper"></i><span>News</span></div>
                 <div id="news-widget"></div>
             </div>
@@ -453,6 +472,7 @@
         <!-- New Widget Scripts -->
         <script src="scripts/weather.js" defer></script>
         <script src="scripts/news.js" defer></script>
+        <script src="scripts/draggable.js" defer></script>
 
     </div>
 

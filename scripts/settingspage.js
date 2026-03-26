@@ -657,7 +657,7 @@ document.getElementById('ambiance-setting-toggle').onclick = function () {
     const enabled = this.classList.contains('active');
     settings.ambianceByDefault = enabled;
     saveSettings(settings);
-    if (window.Notify) Notify.success('Saved', 'Ambiance by Default ' + (enabled ? 'enabled' : 'disabled'));
+    if (window.Notify) Notify.success('Saved', 'Ambiance on by Default ' + (enabled ? 'enabled' : 'disabled'));
 };
 
 if (announcementSourceSelect) {

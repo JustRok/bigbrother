@@ -165,7 +165,7 @@ body.theater-active .player-controls {
 }
 
 body.theater-active .player-info {
-    bottom: 90px;
+    bottom: 110px;
     top: auto;
     background: transparent;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
@@ -211,7 +211,7 @@ body.theater-active .player-info>* {
 }
 
 .player-info {
-    padding: 24px;
+    padding: 32px 24px 24px;
     background: transparent;
     border-top: none;
     transition: background 0.2s, opacity 0.2s;
@@ -228,6 +228,15 @@ body.theater-active .player-info>* {
     color: var(--text-muted);
     line-height: 1.6;
     font-size: 0.875rem;
+}
+
+body.theater-active .player-title {
+    font-size: 1.65rem;
+}
+
+body.theater-active .player-desc {
+    font-size: 0.96rem;
+    max-width: 75%;
 }
 
 .player-quote {

@@ -14,8 +14,7 @@ function setPlatform(p) {
     grid.innerHTML = '';
     if (statusText) statusText.textContent = '';
 
-    // On platform switch, if search is empty, show defaults
-    if (!searchInput.value.trim()) {
+   if (!searchInput.value.trim()) {
         if (p === 'youtube') searchYouTube('nba 2k26');
         else showDefaultStreamers();
     }
@@ -25,11 +24,9 @@ function showDefaultStreamers() {
     if (!grid) return;
     grid.innerHTML = "";
     const streamers = [
-        'Clix', 'Jynxzi', 'Lacy', 'Flight23White', 'CaseOh_', 'KaiCenat',
-        'Agent00', 'ChrisSmoove', 'Tyceno', 'TYCooN', 'PowerDF', 'itsshakedown',
-        'PlaqueboyMax', 'AdinRoss', 'IShowSpeed', 'DukeDennis', 'Fanum', 'StableRonaldo',
-        'Mongraal', 'SypherPK', 'NickEh30', 'Tfue', 'Ninja', 'xQc',
-        'Sketch', 'TenZ', 'TypicalGamer', 'Bugha', 'FaZeRug', 'YourRAGE'
+        'Clix', 'Jynxzi', 'Lacy', 'Flight23White', 'CaseOh_', 'KaiCenat', 'Peterbot', 'Agent00', 'PlaqueboyMax',
+        'AdinRoss', 'IShowSpeed', 'DukeDennis', 'Fanum', 'StableRonaldo', 'Mongraal', 'SypherPK', 
+        'NickEh30','Tfue', 'Ninja', 'xQc', 'Sketch', 'TenZ', 'TypicalGamer', 'Bugha', 'FaZeRug'
     ];
 
     streamers.forEach(channel => {
@@ -50,21 +47,16 @@ async function startSearch() {
 
 async function searchYouTube(query) {
     if (!grid) return;
-    if (statusText) statusText.textContent = "Querying YouTube API...";
-
-    // Show skeletons
-    grid.innerHTML = Array(12).fill('<div class="media-card"><div class="skeleton" style="width:100%;height:100%;"></div></div>').join('');
+   grid.innerHTML = Array(12).fill('<div class="media-card"><div class="skeleton" style="width:100%;height:100%;"></div></div>').join('');
 
     let videos = [];
     let fromCache = false;
 
-    // Check cache for default nba 2k26 query
     if (query.toLowerCase() === 'nba 2k26') {
         const cached = localStorage.getItem('nba2k26_default_cache');
         if (cached) {
             try {
                 const data = JSON.parse(cached);
-                // 2 days = 172800000 ms
                 if (Date.now() - data.timestamp < 172800000) {
                     videos = data.items;
                     fromCache = true;
@@ -84,7 +76,6 @@ async function searchYouTube(query) {
             const result = await response.json();
             videos = result.data?.items || [];
 
-            // Save to cache if this was the default nba 2k26 query
             if (query.toLowerCase() === 'nba 2k26' && videos.length > 0) {
                 localStorage.setItem('nba2k26_default_cache', JSON.stringify({
                     timestamp: Date.now(),
@@ -115,29 +106,6 @@ async function searchYouTube(query) {
     if (statusText) statusText.textContent = "";
 }
 
-function fuzzyMatch(query, text) {
-    const q = query.toLowerCase();
-    const t = text.toLowerCase();
-    if (t === q) return 1000;
-    if (t.startsWith(q)) return 500 - t.length;
-    if (t.includes(q)) return 200 - t.length;
-
-    // subsequence match
-    let nIdx = 0;
-    let hIdx = 0;
-    let score = 0;
-    while (nIdx < q.length && hIdx < t.length) {
-        if (q[nIdx] === t[hIdx]) {
-            nIdx++;
-            score += 10;
-        } else {
-            score -= 1;
-        }
-        hIdx++;
-    }
-    if (nIdx === q.length) return score;
-    return -1;
-}
 
 function searchTwitch(query) {
     if (!grid) return;
@@ -153,17 +121,10 @@ function searchTwitch(query) {
         'Sketch', 'TenZ', 'TypicalGamer', 'Bugha', 'FaZeRug', 'YourRAGE'
     ];
 
-    // Fuzzy search from default list
-    const scoredStreamers = streamers.map(s => ({ name: s, score: fuzzyMatch(input, s) }))
-        .filter(s => s.score > 0)
-        .sort((a, b) => b.score - a.score);
-
-    const matchNames = scoredStreamers.map(s => s.name);
+    const matchNames = streamers.filter(s => s.toLowerCase().includes(input));
     
-    // Also allow manual channelEntry (comma separated or single)
     let manualChannels = input.split(',').map(s => s.trim()).filter(s => s.length > 0);
     
-    // Merge results, avoiding duplicates
     const finalChannels = [...matchNames];
     manualChannels.forEach(c => {
         if (!finalChannels.some(f => f.toLowerCase() === c.toLowerCase())) {
@@ -180,7 +141,7 @@ function searchTwitch(query) {
         grid.appendChild(card);
     });
 
-    if (statusText) statusText.textContent = finalChannels.length > 0 ? "Channels ready." : "No channels found.";
+    if (statusText && finalChannels.length === 0) statusText.textContent = "No channels found.";
 }
 
 function createMediaCard(thumb, title, meta, onClick, isLive = false) {
@@ -189,7 +150,7 @@ function createMediaCard(thumb, title, meta, onClick, isLive = false) {
     if (isLive) card.classList.add('is-live');
 
     card.innerHTML = `
-        <img src="${thumb}" loading="lazy" alt="${title}" onerror="this.src='https://via.placeholder.com/440x248?text=Offline/Locked'">
+        <img src="${thumb}" loading="lazy" alt="${title}" onerror="this.src='about:blank'">
         <div class="media-card-overlay">
             <div class="media-card-info">
                 <div class="media-card-title">${title}</div>
@@ -266,7 +227,6 @@ function loadContinueWatching() {
             window.location.href = item.url;
         };
 
-        // Add remove button
         const removeBtn = document.createElement('button');
         removeBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
         removeBtn.className = 'remove-btn';
@@ -283,13 +243,11 @@ function loadContinueWatching() {
     });
 }
 
-// Initial load
 document.addEventListener('DOMContentLoaded', () => {
     loadContinueWatching();
-    // Automatically search for nba 2k26 to populate the grid
-    searchYouTube('nba 2k26');
+    //search for 2k26
+    searchYouTube('2k26');
 
-    // Random functionality
     const randomBtn = document.getElementById('random-btn');
     if (randomBtn) {
         randomBtn.onclick = () => {
@@ -304,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-// Add event listener for Enter key
 if (searchInput) {
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') startSearch();
