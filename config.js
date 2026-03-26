@@ -8,6 +8,7 @@ window.SITE_CONFIG = {
       "fixxed games",
       "fixxed a broken auto provider switch for movies",
       "added dragging for news and weather widgets",
+      "unblocked twitch chat"
       "minor changes"
     
     ],
