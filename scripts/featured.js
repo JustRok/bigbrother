@@ -21,7 +21,6 @@ const FeaturedGames = {
                 allGames = await window.Gloader.load('multi');
             } else {
                 console.warn("Gloader not found in featured.js");
-                // Fallback to old loading logic if gloader fails
                 const data = await (await fetch("https://cdn.jsdelivr.net/gh/gn-math/assets@latest/zones.json")).json();
                 allGames = data.map(g => ({
                     name: (g.name || g.title).replace(/\.html$|-a\.html$/i, '').replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, l => l.toUpperCase()).trim(),
@@ -43,7 +42,6 @@ const FeaturedGames = {
                     g.url = `pages/player.html?type=game&title=${encodeURIComponent(g.name)}&url=${encodeURIComponent(targetGame.url)}`;
                     g.img = g.img || targetGame.img || `https://cdn.jsdelivr.net/gh/gn-math/assets@latest/images/${g.gameName.toLowerCase().replace(/\s+/g, '-')}.png`;
 
-                    // Trigger preload without blocking the map
                     const img = new Image();
                     img.src = g.img;
                 } else {

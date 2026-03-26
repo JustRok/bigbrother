@@ -1,65 +1,42 @@
 window.SITE_CONFIG = {
     name: "Phantom",
     fullName: "Phantom Unblocked",
-    version: "1.1.6",
+    version: "1.1.7",
 
     changelog: [
-        "added files and attachment support and much more to Aichat",
-        "minor styling changes and improvements to search",
-        "revamped search bar in movies and watch page",
-        "major improvements to movies including top 10 and my list",
-        "fixxed ?unblock mode",
-        "improved searching for games and such",
-        "added news and weather widgets in the home page",
-        "SO MUCH MORE!"
+      "more sources in movies",
+      "fixxed games",
+      "fixxed a broken auto provider switch for movies",
+      "added dragging for news and weather widgets",
+      "unblocked twitch chat",
+      "minor changes"
+    
     ],
 
     quotes: [
         "lebron lebron lebronn james",
-        "so tuff",
-        "it is what it is",
-        "do ur work",
         "this is what happens when u dont touch grass",
-        "FULL BOX",
         "FULL PIECE",
         "200!",
         "press esc + refresh + power button for hacks",
         "press ctrl+x to hide your screen",
         "change the tab title and favicon in settings",
-        "TEACHERR!",
-        "1 pump",
         "303 headshot",
         "bros prolly a 60 ovr",
         "take the L lil bro",
-        "lebron is OUR goat",
-        "stop looking at my screen",
+        "anything but work"
     ],
 
     todos: [
-        "***make choosing a episode for series in movies look better***",
-        "***fix continue watching in movies***",
-        "***allow no background as a background in rotation***",
-        "***allow ai take screenshots***",
-        "***remove platform stream text in player.html***",
-        "***fix watch.html subtitle***",
-        "***overhaul movies with top 10 movies and tvshows, my list, better theater mode***",
-        "***support adding attachments to aichat and allow pictures if possible, allow drag and drop along with selecting***",
-        "***make movies havae top 10 in the world***",
-        "find hosting outside of surge.sh",
-        "***fix ?unblock***",
-        "***make libcurl default for embed.html***",
-        "***revert/change styling in browser***",
-        "***add more games***",
-        "***add the weather n news somewhere***",
-        "***update movies and watch tab similarly to games***",
-        "phantom v2 redo phantom into tabs",
-        "add singlefile, genuinely dont know how to do this",
-    ],
-    defaultWisp: "wss://glseries.net/wisp/",
+        "singlefile",
+        "make domainfinder say if its blocked or not"
+],
+    defaultWisp: "wss://lunarrr.eminescusm.ro/w/",
     wispServers: [
         { name: "Anura's Wisp", url: "wss://anura.mercurywork.shop/" },
         { name: "Glseries's Wisp", url: "wss://glseries.net/wisp/" },
-        { name: "Incognito Wisp", url: "wss://incog.works/wisp/" },
+        { name: "Incognito's Wisp", url: "wss://incog.works/wisp/" },
+        { name: "Lunar's Wisp", url: "wss://lunarrr.eminescusm.ro/w/" },
     ],
 
     discord: {
@@ -147,13 +124,13 @@ window.SITE_CONFIG = {
         enabled: true,
         title: "March Madness",
         icon: "fa-basketball",
-        date: "2026 03/21",
-        prompt: `Today is March 21, 2026. 4 biggest March Madness results from the last 24 hours.
+        date: "2026 03/26",
+        prompt: `Today is March 26, 2026. 4 biggest March Madness results from the last 24 hours.
 Prioritize upsets, overtime, and buzzer-beaters. Skip boring blowouts unless a low seed caused it.
 NEVER use mascot nicknames — always use full school names in both headlines and summaries.
 Summaries must add NEW context not in the headline (bracket impact, history, streaks). Never just restate the score.
 Only report real, verified results. If unsure, do not include it.
 Format: * Headline with seeds and score | Source | Summary under 12 words using school names only.
-Example: * (15) Saint Peter's stuns (2) Kentucky 85-79 | ESPN | First 15-seed upset of the tournament.`
+Example: * (15) Saint Peter's stuns (2) Kentucky 85-79 | ESPN | First 15-seed upset of the tournament with star player scoring 40 points.`
     }
 }

@@ -2,9 +2,9 @@ const params = new URLSearchParams(window.location.search);
 const type = params.get('type'), id = params.get('id'), title = params.get('title'), urlParam = params.get('url'), season = params.get('season'), episode = params.get('episode'), source = params.get('source');
 
 const PROVIDERS = [
-    { id: 'vidify', name: 'Vidify', urls: { movie: 'https://player.vidify.top/embed/movie/{id}', tv: 'https://player.vidify.top/embed/tv/{id}/{season}/{episode}' } },
+    { id: 'vidsrc_su', name: 'Vidsrc.su', urls: { movie: 'https://vidsrc.su/movie/{id}?autoplay=true', tv: 'https://vidsrc.su/tv/{id}/{season}/{episode}?autoplay=true&autonextepisode=true' } },
     { id: 'vidfast', name: 'Vidfast', urls: { movie: 'https://vidfast.to/embed/movie/{id}', tv: 'https://vidfast.to/embed/tv/{id}/{season}/{episode}' } },
-    { id: 'vidsrc_su', name: 'Vidsrc.su', urls: { movie: 'https://vidsrc.su/movie/{id}?autoplay=true', tv: 'https://vidsrc.su/tv/{id}/{season}/{episode}?autoplay=true' } },
+    { id: '2embed', name: '2Embed', urls: { movie: 'https://www.2embed.cc/embed/{id}', tv: 'https://www.2embed.cc/embedtv/{id}&s={season}&e={episode}' } },
 ];
 
 if (typeof window.PROVIDERS === 'undefined') {
@@ -20,23 +20,80 @@ if (isPlayerPage) {
     let currentUrl = '', curProvIdx = 0;
 
     class SmartSwitcher {
-        constructor() { this.retry = 0; if (frame) frame.onload = () => (this.clear(), console.log('Loaded')); }
-        clear() { clearTimeout(this.tm); this.tm = null; }
-        start() { this.clear(); this.tm = setTimeout(() => this.fail(), 15000); }
-        fail() {
-            const isYT = currentUrl && (currentUrl.includes('youtube.com') || currentUrl.includes('youtube-nocookie.com'));
-            if (type === 'video' || isYT) return; // Don't check search results/youtube
-            if (++this.retry >= 3) return window.Notify?.error('Error', 'All providers failed');
-            window.Notify?.info('Switching', 'Slow source, trying next...');
-            if (type === 'game') this.toggleProxy(); else this.next();
+        constructor() { 
+            this.retry = 0; 
+            this.triedProxy = false;
+            this.confirmed = false;
+            if (frame) frame.onload = () => {
+                try { if (frame.contentWindow.location.href.includes('about:blank')) return; } catch(e) {}
+                if (type === 'game' || type === 'video') { this.clear(); }
+            }; 
         }
+        confirm() { this.confirmed = true; this.clear(); }
+        clear() { clearTimeout(this.tm); this.tm = null; }
+
+        async precheck(url) {
+            if (type === 'game' || type === 'video') return true;
+            const rawUrl = url.includes('embed.html#') ? url.split('embed.html#')[1] : url;
+            try {
+                const domain = new URL(rawUrl).origin;
+                const ctrl = new AbortController();
+                setTimeout(() => ctrl.abort(), 3000);
+                await fetch(domain, { mode: 'no-cors', signal: ctrl.signal });
+                return true;
+            } catch(e) { return false; }
+        }
+
+        start() { 
+            this.clear(); 
+            this.confirmed = false;
+            this.tm = setTimeout(() => this.fail(), 15000); 
+        }
+
+        fail() {
+            if (this.confirmed) return;
+            const isYT = currentUrl && (currentUrl.includes('youtube.com') || currentUrl.includes('youtube-nocookie.com'));
+            if (type === 'video' || isYT) return; 
+            
+            if (window.Settings && window.Settings.get('autoSwitch') === false) {
+                 window.Notify?.error('Error', 'Source failed to load.');
+                 return;
+            }
+            if (type === 'game') return;
+
+            if (proxyToggle && !proxyToggle.classList.contains('active') && !this.triedProxy) {
+                 window.Notify?.info('Proxy', 'Trying proxy mode... (Disable in settings)');
+                 this.triedProxy = true;
+                 proxyToggle.classList.add('active');
+                 loadProvider(PROVIDERS[curProvIdx].id, true);
+                 return;
+            }
+
+            if (++this.retry >= PROVIDERS.length) {
+                window.Notify?.error('Failed', 'All providers exhausted. (Disable in settings)');
+                this.retry = 0;
+                return;
+            }
+
+            const nextName = PROVIDERS[(curProvIdx + 1) % PROVIDERS.length].name;
+            window.Notify?.info('Switching', `Trying ${nextName}... (Disable in settings)`);
+            this.triedProxy = false;
+            this.next();
+        }
+
         next() {
             curProvIdx = (curProvIdx + 1) % PROVIDERS.length;
             const s = document.getElementById('provider-select');
             if (s) s.value = PROVIDERS[curProvIdx].id;
             loadProvider(PROVIDERS[curProvIdx].id, true);
         }
-        toggleProxy() { if (proxyToggle) { proxyToggle.classList.toggle('active'); source === 'twitch' ? loadTwitch(id) : (type === 'game' ? loadGame(currentUrl, true) : loadProvider(PROVIDERS[curProvIdx].id, true)); } }
+
+        toggleProxy() { 
+            if (proxyToggle) { 
+                proxyToggle.classList.toggle('active'); 
+                source === 'twitch' ? loadTwitch(id) : (type === 'game' ? loadGame(currentUrl, true) : loadProvider(PROVIDERS[curProvIdx].id, true)); 
+            } 
+        }
     }
     const switcher = new SmartSwitcher();
 
@@ -114,14 +171,17 @@ if (isPlayerPage) {
         // Ambiance Toggle Support
         const ambianceBtn = document.getElementById('btn-ambiance');
         if (ambianceBtn) {
+            const updateAmbianceBtn = (active) => {
+                ambianceBtn.innerHTML = active ? '<i class="fa-solid fa-wand-magic-sparkles"></i> Ambiance: On' : '<i class="fa-solid fa-wand-magic"></i> Ambiance: Off';
+            };
+
             ambianceBtn.onclick = () => {
                 const isActive = window.Ambiance?.toggle();
-                ambianceBtn.classList.toggle('active', isActive);
+                updateAmbianceBtn(isActive);
             };
-            // Set initial state visual
-            if ((window.Settings ? window.Settings.get('ambianceByDefault') : localStorage.getItem('phantom_ambiance_enabled')) !== false) {
-                ambianceBtn.classList.add('active');
-            }
+
+            const initialActive = (window.Ambiance ? window.Ambiance.enabled : (window.Settings ? window.Settings.get('ambianceByDefault') : localStorage.getItem('phantom_ambiance_enabled')) !== false);
+            updateAmbianceBtn(initialActive);
         }
 
         saveWatchProgress();
@@ -149,7 +209,7 @@ if (isPlayerPage) {
             item.episode = episode;
         }
 
-        // Remove existing entry for this specific item to move it to top
+        // Find existing entry for this specific item to move it to top
         const filteredHistory = history.filter(h => {
             if (type === 'tv') {
                 const urlObj = new URL(h.url, window.location.origin);
@@ -157,11 +217,11 @@ if (isPlayerPage) {
                 const e = urlObj.searchParams.get('episode');
                 return !(h.id === id && h.type === 'tv' && s === season && e === episode);
             }
-            return !(h.id === id && h.type === type);
+            return !(h.id === id && h.type === type && (type !== 'video' || h.url === window.location.href));
         });
 
         filteredHistory.unshift(item);
-        const limitedHistory = filteredHistory.slice(0, 10);
+        const limitedHistory = filteredHistory.slice(0, 15);
         localStorage.setItem('continue_watching', JSON.stringify(limitedHistory));
     }
 
@@ -184,7 +244,9 @@ if (isPlayerPage) {
     };
 
     function getSavedProgress() {
-        const key = (type === 'game' || type === 'video') ? urlParam : id;
+        let key = (type === 'game' || type === 'video') ? urlParam : id;
+        if (type === 'tv' && season && episode) key = `${id}_s${season}_e${episode}`;
+        
         if (key) {
             const data = localStorage.getItem(`progress_${key}`);
             return data ? JSON.parse(data) : null;
@@ -242,7 +304,7 @@ if (isPlayerPage) {
             };
             // Use native video for ambiance if available
             window.Ambiance?.setSource(videoFrame);
-        } else if (url.includes('#') || url.includes('staticsjv2/') || url.includes('youtube.com') || url.includes('youtube-nocookie.com') || url.includes('workers.dev')) {
+        } else {
             let finalUrl = url;
             const isYT = url.includes('youtube.com') || url.includes('youtube-nocookie.com');
 
@@ -263,7 +325,6 @@ if (isPlayerPage) {
             window.Ambiance?.setSource(params.get('img'));
 
             if (isYT) {
-                // Wait for API and frame to be ready
                 frame.onload = () => {
                     if (window.YT && YT.Player) {
                         ytPlayer = new YT.Player(frame, {
@@ -288,41 +349,70 @@ if (isPlayerPage) {
                         });
                     }
                 };
+                return;
             }
-        } else {
             try {
-                frame.src = 'about:blank';
-                let h = await (await fetch(url)).text();
-                const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+                let res = await fetch(url);
+                let h = await res.text();
 
-                // For Games-lib, replace absolute paths with relative ones to work on any hosting path
+                // jsDelivr 50MB error detection or general connection failure
+                const errorDetect = !res.ok || h.toLowerCase().includes('package size exceeded') || (h.length < 1000 && h.includes('github.com/'));
+                
+                if (errorDetect && url.includes('cdn.jsdelivr.net')) {
+                    // Switch to GitHub Raw fallback (using 'main' branch as specified by the user)
+                    let gh = url.replace('cdn.jsdelivr.net/gh/', 'raw.githubusercontent.com/');
+                    gh = gh.replace(/raw\.githubusercontent\.com\/([^\/]+\/[^\/]+)\/([^\/]+)/, (m, p1, p2) => {
+                        return (p2 === 'main' || p2 === 'master') ? m : `raw.githubusercontent.com/${p1}/main/${p2}`;
+                    });
+                    
+                    try {
+                        let r2 = await fetch(gh);
+                        if (!r2.ok) r2 = await fetch(gh.replace('/main/', '/master/'));
+                        if (r2.ok) { res = r2; h = await r2.text(); window.Notify?.info('CDN Fallback', 'Using backup mirror for large game'); }
+                    } catch (e) { console.warn('Fallback failed:', e); }
+                }
+
+                if (!res.ok) throw new Error('Fetch failed');
+                const isError = h.includes('404: Not Found') || h.length < 100;
+                if (isError) throw new Error('CDN error');
+
+                const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
                 if (url.includes('Games-lib')) {
                     h = h.replace(/(src|href)=(['"])\/(?!\/)/g, '$1=$2./');
                 }
 
-                // Inject base tag to fix all relative assets
                 const baseTag = `<base href="${baseUrl}">`;
-                if (h.includes('<head>')) {
-                    h = h.replace('<head>', `<head>${baseTag}`);
-                } else if (h.includes('<html>')) {
-                    h = h.replace('<html>', `<html><head>${baseTag}</head>`);
-                } else {
-                    h = `<head>${baseTag}</head>` + h;
+                if (!h.includes('<base ')) {
+                    if (h.includes('<head>')) h = h.replace('<head>', `<head>${baseTag}`);
+                    else if (h.includes('<html>')) h = h.replace('<html>', `<html><head>${baseTag}</head>`);
+                    else h = `<head>${baseTag}</head>` + h;
                 }
 
-                frame.src = URL.createObjectURL(new Blob([h], { type: 'text/html' }));
-            } catch (e) { frame.src = url; }
+                // Reset and write directly (This fixes the black screen and mime-type issues)
+                frame.src = 'about:blank';
+                setTimeout(() => {
+                    try {
+                        const doc = frame.contentWindow.document;
+                        doc.open();
+                        doc.write(h);
+                        doc.close();
+                        switcher.clear();
+                    } catch (e) { frame.src = finalUrl; }
+                }, 10);
+            } catch (e) { frame.src = finalUrl; }
         }
     }
 
     function loadTwitch(channel) {
-        const url = proxyToggle?.classList.contains('active')
+        const useProxy = proxyToggle?.classList.contains('active');
+        const url = useProxy
             ? `https://twitch.leelive2021.workers.dev/?channel=${encodeURIComponent(channel)}`
             : `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${window.location.hostname}`;
 
-        // Always update chat src if it's twitch
-        chatFrame.src = `https://www.twitch.tv/embed/${encodeURIComponent(channel)}/chat?parent=${window.location.hostname}&darkpopout`;
+        let chatUrl = `https://www.twitch.tv/embed/${encodeURIComponent(channel)}/chat?parent=${window.location.hostname}&darkpopout`;
+        if (useProxy) chatUrl = `../staticsjv2/embed.html#${chatUrl}`;
 
+        chatFrame.src = chatUrl;
         loadGame(url);
     }
 
@@ -332,25 +422,37 @@ if (isPlayerPage) {
         btnChat.classList.toggle('active', !isVisible);
     }
 
-    function loadProvider(pid, silent = false) {
+    async function loadProvider(pid, silent = false) {
         const p = PROVIDERS.find(x => x.id === pid);
         if (!p) return;
-        if (!silent) switcher.retry = 0;
-        switcher.start();
+        if (!silent) { switcher.retry = 0; switcher.triedProxy = false; }
         let u = (type === 'movie' ? p.urls.movie : p.urls.tv).replace('{id}', id).replace('{tmdb_id}', id).replace('{season}', season).replace('{episode}', episode);
 
         const saved = getSavedProgress();
-        if (saved && saved.currentTime > 0) {
+        if (saved && saved.currentTime > 5) {
             const separator = u.includes('?') ? '&' : '?';
-            const param = (pid === 'vidify' || pid === 'vidsrc_su') ? 't' : 'start';
+            const param = (pid === '2embed' || pid === 'vidfast') ? 'start' : 't';
             u += `${separator}${param}=${Math.floor(saved.currentTime)}`;
         }
 
         if (proxyToggle?.classList.contains('active')) u = `../staticsjv2/embed.html#${u}`;
 
-        // Proper reload: clear src first, then set new URL
+        const reachable = await switcher.precheck(u);
+        if (!reachable) {
+            window.Notify?.info('Unreachable', `${p.name} is down, skipping...`);
+            switcher.triedProxy = false;
+            switcher.retry++;
+            if (switcher.retry >= PROVIDERS.length) {
+                window.Notify?.error('Failed', 'All providers unreachable. (Disable in settings)');
+                switcher.retry = 0;
+                return;
+            }
+            switcher.next();
+            return;
+        }
+
+        switcher.start();
         currentUrl = u;
-        const oldSrc = frame.src;
         frame.src = 'about:blank';
         setTimeout(() => { frame.src = u; }, 10);
 
@@ -362,6 +464,15 @@ if (isPlayerPage) {
         if (source === 'twitch' || type === 'twitch') return;
         if (window.Settings && window.Settings.get('historyEnabled') === false) return;
         
+        let key = (type === 'game' || type === 'video') ? urlParam : id;
+        if (type === 'tv' && season && episode) key = `${id}_s${season}_e${episode}`;
+
+        // Guard: Prevent overwriting significant progress with 0 right after load
+        if (currentTime < 10) {
+            const saved = getSavedProgress();
+            if (saved && saved.currentTime > 30) return;
+        }
+
         const history = JSON.parse(localStorage.getItem('continue_watching') || '[]');
         
         // Find existing item in history
@@ -372,6 +483,7 @@ if (isPlayerPage) {
                 const e = urlObj.searchParams.get('episode');
                 return h.id === id && h.type === 'tv' && s === season && e === episode;
             }
+            if (type === 'video' || type === 'game') return h.url === window.location.href;
             return h.id === id && h.type === type;
         });
 
@@ -379,15 +491,13 @@ if (isPlayerPage) {
             const progress = {
                 currentTime,
                 duration,
-                percentage: (currentTime / duration) * 100
+                percentage: duration > 0 ? (currentTime / duration) * 100 : 0
             };
             history[itemIdx].progress = progress;
             history[itemIdx].timestamp = Date.now();
             localStorage.setItem('continue_watching', JSON.stringify(history));
         }
 
-        // Also save to individual key for getSavedProgress
-        const key = (type === 'game' || type === 'video') ? urlParam : id;
         if (key) {
             localStorage.setItem(`progress_${key}`, JSON.stringify({
                 currentTime,
@@ -439,7 +549,7 @@ if (isPlayerPage) {
             if (document.body.classList.contains('theater-active')) {
                 document.body.classList.add('user-idle');
             }
-        }, 3000);
+        }, 2000);
     };
 
     ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(e => {
@@ -465,24 +575,24 @@ if (isPlayerPage) {
 
     // Progress-Tracking for Providers (Vidify and VidSrc.su)
     window.addEventListener('message', (event) => {
-        // Vidify
         if (event.origin === 'https://player.vidify.top' && event.data?.type === 'WATCH_PROGRESS') {
+            switcher.confirm();
             const { mediaId, eventType, currentTime, duration } = event.data.data;
             if (eventType === 'timeupdate' || eventType === 'pause' || eventType === 'play') {
                 updateHistoryProgress(currentTime, duration, mediaId);
             }
         }
         
-        // VidSrc.su
         if (event.data?.type === 'MEDIA_DATA') {
+            switcher.confirm();
             const mediaData = event.data?.data;
             if (mediaData && mediaData.id && (mediaData.type === 'movie' || mediaData.type === 'tv')) {
                 const progress = mediaData.progress;
-                if (progress && typeof progress.duration !== 'undefined') {
-                    // Try to find the time field (commonly watched_time or currentTime)
-                    const currentTime = progress.watched_time || progress.currentTime || progress.time;
-                    if (typeof currentTime !== 'undefined') {
-                        updateHistoryProgress(currentTime, progress.duration, mediaData.id);
+                if (progress) {
+                    const currentTime = progress.watched_time !== undefined ? progress.watched_time : (progress.watched !== undefined ? progress.watched : (progress.currentTime || progress.time));
+                    const duration = progress.duration || 0;
+                    if (currentTime !== undefined) {
+                        updateHistoryProgress(currentTime, duration, mediaData.id);
                     }
                 }
             }

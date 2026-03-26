@@ -151,10 +151,10 @@
     <script>
       (function() {
             var p = new URLSearchParams(location.search);
+            var unblockKey = 'phantom_unblock_all';
             
-            // Redirect if ?unblock is present OR if session is active
-            if (p.has('unblock') || p.has('unblock all') || p.get('unblock') === 'all' || sessionStorage.getItem('phantom_unblock_all') === 'true') {
-                sessionStorage.setItem('phantom_unblock_all', 'true');
+            if (p.has('unblock') || p.has('unblock all') || p.get('unblock') === 'all' || localStorage.getItem(unblockKey) === 'true') {
+                localStorage.setItem(unblockKey, 'true');
                 window.addEventListener('beforeunload', (e) => {
                     e.preventDefault();
                     e.returnValue = '';
@@ -165,6 +165,7 @@
         })();
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
     <script src="config.js" defer></script>
     <script src="scripts/notifications.js" defer></script>
     <script src="scripts/settings.js" defer></script>

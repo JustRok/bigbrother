@@ -70,7 +70,8 @@ const ProxyInit = {
             if ('serviceWorker' in navigator) {
                 if (offlineEnabled) {
                     try {
-                        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+                        const swPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'sw.js';
+                        await navigator.serviceWorker.register(swPath);
                     } catch (e) {
                         console.error('Main SW registration failed:', e);
                     }

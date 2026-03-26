@@ -44,6 +44,8 @@ class PhantomChat {
         if (window.Notify) {
             Notify.success('Ready', 'Phantom AI is loaded');
         }
+
+        this.dom.input.focus();
     }
 
     cacheDOM() {

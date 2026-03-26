@@ -47,7 +47,7 @@ const PhantomSearch = {
         this.inputEl.addEventListener('focus', () => this.onFocus());
         document.addEventListener('click', (e) => this.onClickOutside(e));
 
-        // Use Gloader for data
+
         if (window.Gloader) {
             this.allGames = await window.Gloader.load();
         } else {
@@ -105,7 +105,6 @@ const PhantomSearch = {
         if (t.startsWith(q)) return 500 - t.length;
         if (t.includes(q)) return 200 - t.length;
 
-        // subsequence match
         let nIdx = 0;
         let hIdx = 0;
         let score = 0;
@@ -124,12 +123,12 @@ const PhantomSearch = {
 
     search(query, externalResults = null) {
         const q = query.toLowerCase();
-        const results = [];
+        let results = [];
         const seen = new Set();
+        const seenNorm = new Set();
 
         const add = (item, score = 0) => {
             if (seen.has(item.name)) {
-                // update score if better?
                 const existing = results.find(r => r.name === item.name);
                 if (existing && score > existing.score) existing.score = score;
                 return;
@@ -138,20 +137,40 @@ const PhantomSearch = {
             results.push({ ...item, score });
         };
 
-        // games n pages get first dibs
-        this.allGames.forEach(g => {
-            const nameScore = this.fuzzyMatch(q, g.name);
-            const normScore = g.normalized ? this.fuzzyMatch(q, g.normalized) : -1;
-            const score = Math.max(nameScore, normScore);
-
-            if (score > 0) {
-                const normalized = g.normalized || g.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                const finalUrl = `${this.rootPrefix}pages/games.html?gamename=${normalized}`;
-                // gnmath is usually better than ugs
-                const sourceBonus = g.source === 'gnmath' ? 50 : 0;
-                add({ ...g, url: finalUrl, type: 'game' }, score + sourceBonus);
+        if (window.Fuse && this.allGames.length > 0) {
+            if (!this.fuseGames) {
+                this.fuseGames = new window.Fuse(this.allGames, {
+                    keys: ['name', 'normalized'],
+                    threshold: 0.4,
+                    includeScore: true
+                });
             }
-        });
+            const fuseResults = this.fuseGames.search(query);
+            fuseResults.forEach(r => {
+                const g = r.item;
+                const norm = g.normalized || g.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (!seenNorm.has(norm)) {
+                    seenNorm.add(norm);
+                    const finalUrl = `${this.rootPrefix}pages/player.html?type=game&title=${encodeURIComponent(g.name)}&url=${encodeURIComponent(g.url)}&img=${encodeURIComponent(g.img || '')}`;
+                    add({ ...g, url: finalUrl, type: 'game' }, (1 - r.score) * 1000 + (g.source === 'gnmath' ? 50 : 0));
+                }
+            });
+        } else {
+            this.allGames.forEach(g => {
+                const nameScore = this.fuzzyMatch(q, g.name);
+                const normScore = g.normalized ? this.fuzzyMatch(q, g.normalized) : -1;
+                const score = Math.max(nameScore, normScore);
+
+                if (score > 0) {
+                    const norm = g.normalized || g.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (!seenNorm.has(norm)) {
+                        seenNorm.add(norm);
+                        const finalUrl = `${this.rootPrefix}pages/player.html?type=game&title=${encodeURIComponent(g.name)}&url=${encodeURIComponent(g.url)}&img=${encodeURIComponent(g.img || '')}`;
+                        add({ ...g, url: finalUrl, type: 'game' }, score + (g.source === 'gnmath' ? 50 : 0));
+                    }
+                }
+            });
+        }
 
         this.pages.forEach(p => {
             const nameScore = this.fuzzyMatch(q, p.name);
@@ -167,7 +186,6 @@ const PhantomSearch = {
             }
         });
 
-        // give tv shows a little nudge
         if (externalResults) {
             const tv = externalResults.find(m => m.media_type === 'tv');
             if (tv) {
@@ -179,11 +197,10 @@ const PhantomSearch = {
                     type: 'tv',
                     img: tv.poster_path ? 'https://image.tmdb.org/t/p/w92' + tv.poster_path : null,
                     url: `${this.rootPrefix}pages/player.html?type=tv&id=${tv.id}&title=${encodeURIComponent(tv.name)}`
-                }, 400); // TVs get a decent fixed score if they match TMDB
+                }, 400);
             }
         }
 
-        // handy domains
         this.popularDomains.forEach(d => {
             const domainScore = this.fuzzyMatch(q, d.domain);
             const nameScore = this.fuzzyMatch(q, d.name);
@@ -196,7 +213,6 @@ const PhantomSearch = {
             }
         });
 
-        // add a few movies if we have space
         if (externalResults) {
             externalResults
                 .filter(m => m.media_type !== 'tv')
@@ -216,8 +232,21 @@ const PhantomSearch = {
 
         results.sort((a, b) => b.score - a.score);
 
+        let finalResults = [];
+        let gameCount = 0;
+        for (const item of results) {
+            if (item.type === 'game') {
+                if (gameCount < 3) {
+                    finalResults.push(item);
+                    gameCount++;
+                }
+            } else {
+                finalResults.push(item);
+            }
+        }
+
         const MAX_TOTAL = 6;
-        let finalSuggestions = results.slice(0, MAX_TOTAL);
+        let finalSuggestions = finalResults.slice(0, MAX_TOTAL);
 
         finalSuggestions.push({
             name: `Search the web for "${query}"`,
@@ -315,7 +344,6 @@ function handleSearch(e) {
     const query = input.value.trim();
     if (!query) return;
 
-    // Check if it's a URL
     const isUrl = query.includes('.') && !query.includes(' ');
     let finalUrl;
     if (isUrl) {

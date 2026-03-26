@@ -78,7 +78,7 @@
 
             try {
                 const apiUrl = `https://getwebsiteclones.vercel.app/clones?url=${encodeURIComponent(query)}`;
-                const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`);
+                const response = await fetch(`https://domainfinder.leelive2021.workers.dev/?${encodeURIComponent(apiUrl)}`);
                 
                 if (!response.ok) throw new Error('Proxy request failed');
                 

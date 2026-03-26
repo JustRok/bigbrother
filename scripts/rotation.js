@@ -7,10 +7,7 @@
         if (keys.length > 0) {
             let randomKey;
             const lastRotation = settings.lastThemeRotation || 0;
-            if (lastRotation === 0) {
-                const allowed = ['dark', 'midnight'].filter(k => keys.includes(k));
-                randomKey = allowed.length > 0 ? allowed[Math.floor(Math.random() * allowed.length)] : keys[0];
-            } else if (keys.length > 1) {
+            if (keys.length > 1) {
                 let attempts = 0;
                 do {
                     randomKey = keys[Math.floor(Math.random() * keys.length)];

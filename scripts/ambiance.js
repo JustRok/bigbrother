@@ -41,11 +41,6 @@ class AmbianceManager {
 
     toggle() {
         this.enabled = !this.enabled;
-        if (window.Settings) {
-            window.Settings.set('ambianceByDefault', this.enabled);
-        } else {
-            localStorage.setItem('phantom_ambiance_enabled', this.enabled);
-        }
 
         if (!this.container) this.container = document.getElementById('player-ambiance');
 

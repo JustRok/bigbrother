@@ -15,7 +15,7 @@ const Games = {
 
     async init() {
         this.lib = window.Settings?.get('gameLibrary') || 'multi';
-        // legacy
+
         if (this.lib === 'lib1') this.lib = 'gnmath';
         if (this.lib === 'lib2') this.lib = 'ugs';
 
@@ -27,8 +27,8 @@ const Games = {
         });
 
         await this.loadGames();
-        await this.fetchPopularity(); // Fetch trending data
-        this.checkRedirect(); //  ?gamename=
+        await this.fetchPopularity();
+        this.checkRedirect();
         this.setupListeners();
 
         const sortSelect = document.getElementById('sort-select');
@@ -110,7 +110,7 @@ const Games = {
                 console.error('Gloader missing');
                 return;
             }
-            // Use centralized loader
+
             this.allGames = await window.Gloader.load(this.lib);
             this.filteredGames = [...this.allGames];
             this.applyFilters();
@@ -145,7 +145,7 @@ const Games = {
     },
 
     calculateTopTrending() {
-        // Find top 10 by week
+
         this.top10Trending = [...this.allGames]
             .sort((a, b) => this.getPopularity(b, 'week') - this.getPopularity(a, 'week'))
             .slice(0, 10)
@@ -153,17 +153,17 @@ const Games = {
     },
 
     sort(method) {
-        // Store current sort method for use in applyLikedSort
+
         this.currentSortMethod = method;
 
         if (method === 'newest') {
             this.filteredGames.reverse();
         } else if (method === 'popularity') {
-            // Sort by original order (preserves source order as "popularity")
+
             const originalOrder = new Map(this.allGames.map((g, i) => [g.url, i]));
             this.filteredGames.sort((a, b) => (originalOrder.get(a.url) || 0) - (originalOrder.get(b.url) || 0));
         } else if (method === 'trendingYear') {
-            // Sort by yearly popularity, gnmath always on top
+
             this.filteredGames.sort((a, b) => {
                 const aGnmath = a.type === 'gnmath' ? 0 : 1;
                 const bGnmath = b.type === 'gnmath' ? 0 : 1;
@@ -171,7 +171,7 @@ const Games = {
                 return this.getPopularity(b) - this.getPopularity(a);
             });
         } else if (method === 'trendingMonth') {
-            // Sort by monthly trending, gnmath always on top
+
             this.filteredGames.sort((a, b) => {
                 const aGnmath = a.type === 'gnmath' ? 0 : 1;
                 const bGnmath = b.type === 'gnmath' ? 0 : 1;
@@ -179,7 +179,7 @@ const Games = {
                 return this.getPopularity(b, 'month') - this.getPopularity(a, 'month');
             });
         } else if (method === 'trendingWeek') {
-            // Sort by weekly trending, gnmath always on top
+
             this.filteredGames.sort((a, b) => {
                 const aGnmath = a.type === 'gnmath' ? 0 : 1;
                 const bGnmath = b.type === 'gnmath' ? 0 : 1;
@@ -187,38 +187,38 @@ const Games = {
                 return this.getPopularity(b, 'week') - this.getPopularity(a, 'week');
             });
         }
-        this.calculateTopTrending(); // Refresh top trending after loading or sorting
+        this.calculateTopTrending();
         this.applyFilters();
         this.resetRender();
     },
 
     applyFilters() {
-        // Apply liked filter if active
+
         if (this.showLikedOnly) {
             this.filteredGames = this.allGames.filter(g => this.isLiked(g));
         } else {
-            // If not filtering for favorites, we still sort them to the top
+
             this.applyLikedSort();
         }
     },
 
     getPopularity(game, duration = 'year') {
-        // Extract game ID from URL for gnmath games
+
         const idMatch = game.url?.match(/\/(\d+)\.html$/);
         if (idMatch) {
             const id = parseInt(idMatch[1]);
             return this.popularityData[duration]?.[id] ?? 0;
         }
-        // Check for UGS games
+
         const ugsMatch = game.url?.match(/UGS-Files\/(.+)\.html$/);
         if (ugsMatch) {
-            // Decode the URL-encoded filename and look up popularity
+
             const gameName = decodeURIComponent(ugsMatch[1]);
             const ugsKey = `ugs:${gameName}`;
             return this.popularityData[duration]?.[ugsKey] ?? 0;
         }
-        // Check for PeteZah games
-        const pzMatch = game.url?.match(/gh\/PeteZah-Games\/Games-lib@main\/(.+)\/index\.html$/);
+
+        const pzMatch = game.url?.match(/gh\/Destroyed12121\/Games-lib\/(.+)\/index\.html$/);
         if (pzMatch) {
             const gameName = pzMatch[1];
             return this.popularityData[duration][`pz:${gameName}`] ?? 0;
@@ -290,7 +290,7 @@ const Games = {
 
         batch.forEach((game, index) => {
             const card = this.createCard(game);
-            // Staggered entrance
+
             card.style.animationDelay = `${(index % this.BATCH_SIZE) * 0.02}s`;
             grid.appendChild(card);
         });
@@ -346,14 +346,14 @@ const Games = {
     },
 
     applyLikedSort() {
-        // Stable sort: preserve relative order within liked/unliked groups
-        // by using the current index as a tiebreaker
+
+
         const indexMap = new Map(this.filteredGames.map((g, i) => [g.url, i]));
         this.filteredGames.sort((a, b) => {
             const aLiked = this.isLiked(a) ? 1 : 0;
             const bLiked = this.isLiked(b) ? 1 : 0;
             if (aLiked !== bLiked) return bLiked - aLiked;
-            // Preserve relative order for games with same liked status
+
             return (indexMap.get(a.url) || 0) - (indexMap.get(b.url) || 0);
         });
     },
@@ -365,9 +365,9 @@ const Games = {
 
     addToRecent(game) {
         if (window.Settings && window.Settings.get('historyEnabled') === false) return;
-        // Remove if exists
+
         this.recent = this.recent.filter(g => g.url !== game.url);
-        // Add to front
+
         this.recent.unshift({ 
             name: game.name, 
             url: game.url, 
@@ -376,7 +376,7 @@ const Games = {
             developer: game.developer,
             developerLink: game.developerLink
         });
-        // Cap at 10 (user might prefer slightly less for row alignment)
+
         if (this.recent.length > 10) this.recent.pop();
         localStorage.setItem('recent_games', JSON.stringify(this.recent));
     },
@@ -397,8 +397,8 @@ const Games = {
             return;
         }
 
-        // Filter valid recent games (sanity check against allGames isn't strictly necessary but good if data corrupted)
-        // But users might have played games from other libraries, so we just show what's in history
+
+
         recentGrid.innerHTML = '';
         if (this.recent.length > 0) {
             recentSection.style.display = 'block';
@@ -436,7 +436,7 @@ const Games = {
         }
         localStorage.setItem('liked_games', JSON.stringify(this.liked));
 
-        // If we are in "favorites only" mode, we should refresh the grid
+
         if (this.showLikedOnly) {
             this.performSearch(document.getElementById('search-input')?.value.toLowerCase().trim() || '');
         }
@@ -458,7 +458,7 @@ const Games = {
                 const newLib = e.target.value;
                 if (newLib === this.lib) return;
 
-                // Reload page to apply library change
+
                 window.Settings?.set('gameLibrary', newLib);
                 window.location.reload();
             };
@@ -472,7 +472,7 @@ const Games = {
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect) sortSelect.onchange = (e) => this.sort(e.target.value);
 
-        // Random Game Button
+
         const randomBtn = document.getElementById('random-btn');
         if (randomBtn) {
             randomBtn.onclick = () => {
@@ -483,7 +483,7 @@ const Games = {
             };
         }
 
-        // Favorites Toggle
+
         const likedToggle = document.getElementById('liked-toggle');
         if (likedToggle) {
             likedToggle.onclick = () => {
@@ -493,7 +493,7 @@ const Games = {
             };
         }
 
-        // Back to top
+
         const backToTop = document.getElementById('back-to-top');
         if (backToTop) {
             backToTop.onclick = () => {
@@ -502,49 +502,29 @@ const Games = {
         }
     },
 
-    fuzzyMatch(query, text) {
-        const q = query.toLowerCase();
-        const t = text.toLowerCase();
-        if (t === q) return 1000;
-        if (t.startsWith(q)) return 500 - t.length;
-        if (t.includes(q)) return 200 - t.length;
-
-        // subsequence match
-        let nIdx = 0;
-        let hIdx = 0;
-        let score = 0;
-        while (nIdx < q.length && hIdx < t.length) {
-            if (q[nIdx] === t[hIdx]) {
-                nIdx++;
-                score += 10;
-            } else {
-                score -= 1;
-            }
-            hIdx++;
-        }
-        if (nIdx === q.length) return score;
-        return -1;
-    },
-
     performSearch(term) {
-        let results = [];
         if (!term) {
-            results = [...this.allGames];
+            this.filteredGames = [...this.allGames];
+        } else if (window.Fuse) {
+            if (!this.fuse) {
+                this.fuse = new window.Fuse(this.allGames, {
+                    keys: ['name', 'normalized'],
+                    threshold: 0.4
+                });
+            }
+            this.filteredGames = this.fuse.search(term).map(r => r.item);
         } else {
-            const scored = this.allGames.map(g => ({
-                game: g,
-                score: this.fuzzyMatch(term, g.name)
-            })).filter(item => item.score > 0);
-
-            scored.sort((a, b) => b.score - a.score);
-            results = scored.map(item => item.game);
+            const q = term.toLowerCase();
+            this.filteredGames = this.allGames.filter(g => 
+                g.name.toLowerCase().includes(q) || 
+                (g.normalized && g.normalized.includes(q))
+            );
         }
 
         if (this.showLikedOnly) {
-            results = results.filter(g => this.isLiked(g));
+            this.filteredGames = this.filteredGames.filter(g => this.isLiked(g));
         }
 
-        this.filteredGames = results;
         this.applyFilters();
         this.resetRender();
     }
