@@ -13,6 +13,10 @@
     }
 
 
+    function getConfig() {
+        return window.SITE_CONFIG || {};
+    }
+    
     let config = getConfig();
     const STORAGE_KEY = 'void_settings';
     let storedSettings = {};
