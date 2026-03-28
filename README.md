@@ -51,9 +51,8 @@ For the full legal text, check out the [LICENSE](LICENSE) file. Credits can be f
 
 ---
 
-## Phantom Links
-
-Community-hosted instances of Phantom:
+## Phantom Links (or not)
+From links tab in the credits page.
 
 1.  [phantom101.surge.sh](https://phantom101.surge.sh)
 2.  [lcc-games-beta.pages.dev](https://lcc-games-beta.pages.dev)
