@@ -359,7 +359,7 @@
         function hideLoading() {
             clearTimeout(fallbackTimer);
 
-            const minTime = 50;
+            const minTime = 40;
             const elapsed = Date.now() - loadStartTime;
             const remaining = Math.max(0, minTime - elapsed);
 

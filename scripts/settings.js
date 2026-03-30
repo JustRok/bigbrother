@@ -2,6 +2,15 @@
 (function () {
     'use strict';
 
+    try {
+        const remoteCfg = localStorage.getItem('phantom_server_config');
+        if (remoteCfg) {
+            window.SITE_CONFIG = JSON.parse(remoteCfg);
+        }
+    } catch (e) {
+        console.error("Failed to apply remote configuration", e);
+    }
+
     const STORAGE_KEY = 'void_settings';
 
     const getDefaults = () => {
@@ -113,6 +122,11 @@
                 root.style.setProperty('--bg-image-position', position || 'center');
             } else {
                 root.style.setProperty('--bg-image', 'none');
+            }
+
+            const titleEl = document.querySelector('.site-title');
+            if (titleEl && window.SITE_CONFIG?.fullName) {
+                titleEl.textContent = window.SITE_CONFIG.fullName;
             }
         },
 

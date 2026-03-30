@@ -1,15 +1,15 @@
 window.SITE_CONFIG = {
     name: "Phantom",
     fullName: "Phantom Unblocked",
-    version: "1.1.7",
+    version: "1.1.8",
 
     changelog: [
-        "more sources in movies",
-        "fixxed games",
-        "fixxed a broken auto provider switch for movies",
-        "added dragging for news and weather widgets",
-        "unblocked twitch chat",
-        "minor changes"
+        "fixxed more games",
+        "domain finder now tells you if the domain is blocked or not, quota is low so it dont matter anyways",
+        "minor changes",
+        "added private link option for anyone making links",
+        "links are now minified for performance",
+        
 
     ],
 
@@ -29,7 +29,7 @@ window.SITE_CONFIG = {
 
     todos: [
         "singlefile",
-        "make domainfinder say if its blocked or not"
+        "***make domainfinder say if its blocked or not***"
     ],
     defaultWisp: "wss://lunarrr.eminescusm.ro/w/",
     wispServers: [
@@ -45,8 +45,14 @@ window.SITE_CONFIG = {
         widgetChannel: "1447673726228496617",
     },
 
-    firstVisitCloak: false, // fake offline page
+    firstVisitCloak: false,
     firstVisitCloakKey: "c",
+
+    domainLock: {
+        enabled: false,
+        password: ""
+    },
+
     defaults: {
         cloakMode: "about:blank",
         selectedCloakPreset: "Quiz",
@@ -93,7 +99,6 @@ window.SITE_CONFIG = {
         ocean: { name: 'Oceanic', bg: { type: 'color', value: '#011627' }, surface: '#0B1823', surfaceHover: '#1d3b53', surfaceActive: '#2d4b63', secondary: '#0b2942', border: '#1d3b53', borderLight: '#0b2942', text: '#d6deeb', textSec: '#5f7e97', textDim: '#011627', accent: '#7fdbca' },
     },
 
-    // use "active: true" to set a default background or theme
     backgroundPresets: [
         { id: 'none', name: 'None (Theme Default)', type: 'none' },
         { id: 'f1 car', name: 'F1 Car', type: 'image', url: 'https://images.pexels.com/photos/14401632/pexels-photo-14401632.jpeg', overlay: 0.15 },

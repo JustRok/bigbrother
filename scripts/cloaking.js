@@ -39,8 +39,8 @@
                 setTitle(preset.title);
                 setFavicon(preset.icon || preset.favicon);
             } else {
-                setTitle(window.SITE_CONFIG?.defaults?.tabTitle || 'Phantom Unblocked');
-                setFavicon(window.SITE_CONFIG?.defaults?.tabFavicon || '/favicon.svg');
+                setTitle(window.SITE_CONFIG?.fullName || 'Phantom Unblocked');
+                setFavicon('/favicon.svg');
             }
         }
     };
@@ -75,8 +75,7 @@
             title = preset.title || title;
             icon = preset.icon || preset.favicon || icon;
         } else {
-            title = window.SITE_CONFIG?.defaults?.tabTitle || title;
-            icon = window.SITE_CONFIG?.defaults?.tabFavicon || icon;
+            title = window.SITE_CONFIG?.fullName || title;
         }
         const isUnblock = localStorage.getItem('phantom_unblock_all') === 'true';
         const unblockScript = isUnblock ? `<script>window.addEventListener('beforeunload',function(e){e.preventDefault();e.returnValue='';});</script>` : '';
@@ -244,9 +243,14 @@
         init();
     }
 
-    window.addEventListener('settings-changed', (e) => {
+    window.addEventListener('settings-changed', async (e) => {
         apply();
-        if (e.detail.rotateCloaks) startRotation((e.detail.rotateInterval || 5) * 1000);
+        const s = e.detail;
+        if (s.rotateCloaks) startRotation((s.rotateInterval || 5) * 1000);
         else stopRotation();
+
+        if (window.top === window.self && (s.cloakMode === 'about:blank' || s.cloakMode === 'blob')) {
+            await attemptCloakedLaunch(window.location.href);
+        }
     });
 })();

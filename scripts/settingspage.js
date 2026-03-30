@@ -732,6 +732,11 @@ document.getElementById('clear-cache').onclick = async () => {
         } catch (e) { console.error('SW unregister error:', e); }
     }
 
+    localStorage.removeItem('phantom_config_v');
+    localStorage.removeItem('phantom_server_config');
+    localStorage.removeItem('phantom_cache_v');
+    localStorage.removeItem('void_settings');
+
     if (window.Notify) Notify.success('Success', 'Cache cleared! Reloading...');
     else alert('Cache cleared successfully! Reloading...');
 
@@ -740,6 +745,9 @@ document.getElementById('clear-cache').onclick = async () => {
 document.getElementById('reset-settings').onclick = () => {
     if (!confirm('Reset all settings?')) return;
     localStorage.removeItem('void_settings');
+    localStorage.removeItem('phantom_config_v');
+    localStorage.removeItem('phantom_server_config');
+    localStorage.removeItem('phantom_cache_v');
     location.reload();
 };
 
