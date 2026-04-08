@@ -5,18 +5,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Domain Finder</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../components/topbar.css">
+    <link rel="stylesheet" href="../styles/background.css">
+    <script src="../config.js" defer></script>
+    <script src="../scripts/settings.js" defer></script>
+    <script src="../scripts/background.js" defer></script>
+    <script src="../scripts/notifications.js" defer></script>
     <style>
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 10vh;
+            padding-top: 120px;
             background: radial-gradient(circle at top, #121212, #050505);
             background-attachment: fixed;
             color: #e4e4e7;
             min-height: 100vh;
             margin: 0;
             font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding-bottom: 40px;
         }
 
         .search-container {
@@ -103,7 +120,8 @@
 </head>
 
 <body>
-    <h1>Domain Finder</h1>
+    <div class="app-content">
+        <h1>Domain Finder</h1>
     <div class="search-container">
         <select id="filterSelect" class="filter-select">
             <option value="securly" selected>Securly</option>
@@ -127,6 +145,7 @@
     </div>
     <div id="results" class="results-container"></div>
     <div id="errorMsg" style="color: #ef4444; margin-top: 10px;"></div>
+    </div>
 
     <script>
         const input = document.getElementById('urlInput');
@@ -185,7 +204,7 @@
                     if (f && i < 30) checkDomain(i, f);
                     badge.onclick = (e) => { e.preventDefault(); e.stopPropagation(); checkDomain(i, f || 'securly'); };
                 });
-                if (!currentDomains.length) results.innerHTML = 'No clones found. Quota may be exceeded.';
+                if (!currentDomains.length) results.innerHTML = 'Try again later, quota may be low';
             } catch (err) { errorMsg.innerText = err.message; }
             finally { btn.disabled = false; }
         }
@@ -193,6 +212,8 @@
         btn.onclick = findDomains;
         input.onkeypress = (e) => { if (e.key === 'Enter') findDomains(); };
     </script>
+    <script src="../components/topbar.js"></script>
+    <script src="../components/footer.js" defer></script>
 </body>
 
 </html>

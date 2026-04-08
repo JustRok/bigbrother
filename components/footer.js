@@ -105,7 +105,8 @@
         return id;
     }
 
-    let countdownSeconds = 30;
+    const DEFAULT_CYCLE = 30;
+    let countdownSeconds = (DEFAULT_CYCLE - (Math.floor(Date.now() / 1000) % DEFAULT_CYCLE)) || DEFAULT_CYCLE;
     let countdownInterval;
 
     function startCountdown() {
@@ -367,7 +368,7 @@
             const pageEl = document.getElementById('page-online-count');
             if (pageEl) pageEl.textContent = data.users !== undefined ? data.users : '--';
 
-            countdownSeconds = data.next !== undefined ? data.next : 30;
+            countdownSeconds = data.next !== undefined ? data.next : ((DEFAULT_CYCLE - (Math.floor(Date.now() / 1000) % DEFAULT_CYCLE)) || DEFAULT_CYCLE);
             startCountdown();
 
         } catch (e) {
@@ -376,10 +377,11 @@
             const pageEl = document.getElementById('page-online-count');
             if (pageEl) pageEl.textContent = '--';
 
-            countdownSeconds = 30;
+            countdownSeconds = (DEFAULT_CYCLE - (Math.floor(Date.now() / 1000) % DEFAULT_CYCLE)) || DEFAULT_CYCLE;
             startCountdown();
         }
     }
+    startCountdown();
     updateCounter();
 
     // Keep track of how many tabs are open so we only send the leave ping when the LAST tab closes
@@ -547,46 +549,47 @@
 
 
 
-    let crateInstance = null;
+    let chatLoaded = false;
 
-    function initDiscord() {
-        if (settings.discordWidget && config.discord && config.discord.widgetServer && config.discord.widgetChannel) {
-            if (document.querySelector('script[src*="@widgetbot/crate"]')) {
-                if (crateInstance) crateInstance.show();
-                return;
+    function initChat() {
+        const enabled = settings.discordWidget !== undefined ? settings.discordWidget : (config.defaults?.discordWidget !== undefined ? config.defaults.discordWidget : true);
+
+        if (enabled) {
+            if (!chatLoaded && !document.querySelector('script[src*="phantomchat.js"]')) {
+                const s = document.createElement('script');
+                s.src = `${rootPrefix}scripts/phantomchat.js`;
+                s.async = true;
+                s.onload = () => { chatLoaded = true; };
+                document.body.appendChild(s);
+            } else if (window.PhantomChatWidget) {
+                const b = document.getElementById('pc-bubble');
+                const p = document.getElementById('pc-panel');
+                if (b) b.style.display = '';
+                if (p) p.style.display = '';
             }
-
-            const crateScript = document.createElement('script');
-            crateScript.src = 'https://cdn.jsdelivr.net/npm/@widgetbot/crate@3';
-            crateScript.async = true;
-            crateScript.defer = true;
-            crateScript.onload = () => {
-                crateInstance = new Crate({
-                    server: config.discord.widgetServer,
-                    channel: config.discord.widgetChannel,
-                    glyph: ['https://cdn.discordapp.com/embed/avatars/0.png', '100%'],
-                    location: ['bottom', 'right']
-                });
-            };
-            document.body.appendChild(crateScript);
         } else {
-            if (crateInstance) crateInstance.hide();
+            if (window.PhantomChatWidget) {
+                const b = document.getElementById('pc-bubble');
+                const p = document.getElementById('pc-panel');
+                if (b) b.style.display = 'none';
+                if (p) p.style.display = 'none';
+            }
         }
     }
 
-    initDiscord();
+    initChat();
 
     window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY) {
             try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { }
-            initDiscord();
+            initChat();
         }
     });
 
     window.addEventListener('settings-changed', (e) => {
         settings = e.detail;
-        initDiscord();
-
+        initChat();
     });
 })();
+
 

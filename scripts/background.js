@@ -219,7 +219,7 @@
             const custom = s.customBackground;
             const theme = s.background || {};
 
-            let type = null, url = null, pos = null, overlay = 0.4;
+            let type = null, url = null, pos = null, overlay = 0;
 
             if (custom && custom.id !== 'none' && custom.type !== 'none') {
                 if (custom.id && custom.id !== 'custom') {

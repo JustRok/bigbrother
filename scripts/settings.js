@@ -171,6 +171,9 @@
     };
 
     const init = () => {
+        if (localStorage.getItem('phantom_unblock_all') === 'true' && _settings.cloakMode !== 'none') {
+            Settings.update({ cloakMode: 'none' });
+        }
         Settings.apply();
 
         const featured = window.SITE_CONFIG?.featuredBackground;

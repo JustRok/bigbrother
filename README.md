@@ -39,6 +39,12 @@ Hosting your own version? You can quickly customize the experience by editing `c
 
 ---
 
+## Hosting?
+
+The `min` branch contains the minified version of the codebase, which reduces load times and bandwidth usage, providing the **best possible performance**.
+
+---
+
 ## Legal & Rules
 
 Phantom is free to use and open for forks, but we ask that you follow these simple rules under the **PolyForm Noncommercial License 1.0.0**:

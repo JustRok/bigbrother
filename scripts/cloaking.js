@@ -146,7 +146,15 @@
         }
     };
 
+    let isLaunching = false;
+
     const attemptCloakedLaunch = async (url, hideOverlay = null) => {
+        if (isLaunching) return false;
+        
+        const fvKey = 'phantom_fv';
+        if (window.SITE_CONFIG?.firstVisitCloak && !localStorage.getItem(fvKey) && !hideOverlay) return false;
+
+        isLaunching = true;
         const result = await tryPopup(url);
 
         if (result.success) {
@@ -154,6 +162,7 @@
         }
 
         if (result.reason === 'blocked') {
+            isLaunching = false;
             if (hideOverlay) hideOverlay();
             if (window.Notify) {
                 window.Notify.info('Popups Blocked', 'Please enable popups for this site to use cloaking.');
@@ -161,11 +170,8 @@
 
             showLaunchScreen(async () => {
                 document.getElementById('launch-screen').classList.add('hidden');
-
-                // Try popup again with user gesture
                 const retryResult = await tryPopup(url);
                 if (!retryResult.success) {
-                    // Even with user click, popup failed - load in-tab
                     loadInTab();
                 }
             });
@@ -173,6 +179,7 @@
         }
 
         if (hideOverlay) hideOverlay();
+        isLaunching = false;
         loadInTab();
         return false;
     };
@@ -206,7 +213,8 @@
                 document.head.appendChild(link);
 
                 const onKey = async (e) => {
-                    if (e.key.toLowerCase() === 'c') {
+                    const bypassKey = (window.SITE_CONFIG.firstVisitCloakKey || 'c').toLowerCase();
+                    if (e.key.toLowerCase() === bypassKey) {
                         localStorage.setItem(fvKey, '1');
                         document.removeEventListener('keydown', onKey);
 
@@ -249,7 +257,10 @@
         if (s.rotateCloaks) startRotation((s.rotateInterval || 5) * 1000);
         else stopRotation();
 
-        if (window.top === window.self && (s.cloakMode === 'about:blank' || s.cloakMode === 'blob')) {
+        const fvKey = 'phantom_fv';
+        const isBypassed = !window.SITE_CONFIG?.firstVisitCloak || localStorage.getItem(fvKey);
+
+        if (!isLaunching && isBypassed && window.top === window.self && (s.cloakMode === 'about:blank' || s.cloakMode === 'blob')) {
             await attemptCloakedLaunch(window.location.href);
         }
     });
