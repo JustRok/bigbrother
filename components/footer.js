@@ -349,9 +349,10 @@
 
             const announcementMsg = (data.msg && data.msg.trim() !== "") ? data.msg : window.SITE_CONFIG.announcement?.message;
             if (announcementMsg && announcementMsg.trim() !== "") {
-                const seenKey = `msg_seen_${data.duid || 0}`;
+                const msgKey = announcementMsg.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0) | 0, 0);
+                const seenKey = `msg_seen_${msgKey}`;
                 const seenCount = parseInt(localStorage.getItem(seenKey) || '0');
-                const tabSeenKey = `msg_tab_${data.duid || 0}`;
+                const tabSeenKey = `msg_tab_${msgKey}`;
 
                 if (seenCount < 2 && !sessionStorage.getItem(tabSeenKey)) {
                     setTimeout(() => {
@@ -466,6 +467,12 @@
     const formatAnnouncement = (text) => {
         if (!text) return '';
         return text
+            .replace(/(https?:\/\/[^\s]+)/gi, (url) => {
+                if (url.toLowerCase().includes('?picture')) {
+                    return `<img src="${url.replace(/\?picture/i, '')}" style="max-width:100%;border-radius:8px;margin:8px 0;display:block;" loading="lazy" onerror="this.style.display='none'">`;
+                }
+                return `<a href="${url}" target="_blank" style="color:var(--accent, #fff);text-decoration:underline;word-break:break-all;">${url}</a>`;
+            })
             .replace(/\*\*\*(.*?)\*\*\*/g, '<del>$1</del>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/"/g, '');
@@ -480,7 +487,7 @@
                     <h3 class="modal-title">Announcements</h3>
                     <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
                     <div style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.6;">
                         ${formatAnnouncement(message)}
                     </div>
